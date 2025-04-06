@@ -1,0 +1,50 @@
+
+
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    volumes:
+      - .:/var/www
+    ports:
+      - "80:80"
+    networks:
+      - appNetwork
+    depends_on:
+      - app
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    volumes:
+      - .:/var/www
+    networks:
+      - appNetwork
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=laravel
+      - DB_USERNAME=root
+    command: sh -c "composer install && php artisan migrate && php-fpm"
+    depends_on:
+      - db
+  node:
+    image: node:latest
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npm run build"
+  db:
+    image: mysql:latest
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+    networks:
+      - appNetwork
+    ports:
+      - "3306"
+
+networks:
+  appNetwork:
